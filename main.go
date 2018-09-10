@@ -39,6 +39,7 @@ func main() {
 
 	fmt.Println(getBooks([]int64{13, 14, 16}))
 	zaddBook(book)
+	fmt.Println(zrevrangeBook())
 }
 
 // Struct
@@ -137,4 +138,21 @@ func zaddBook(book Book) error {
 		Member: b,
 	}).Err()
 	return err
+}
+
+func zrevrangeBook() ([]Book, error) {
+	rows, err := redisClient.ZRevRange(bookSortedSetUpdatedAtKey(), 0, -1).Result()
+	if err != nil {
+		return []Book{}, err
+	}
+
+	var books []Book
+	for _, row := range rows {
+		var book Book
+		if err = json.Unmarshal([]byte(row), &book); err != nil {
+			return []Book{}, err
+		}
+		books = append(books, book)
+	}
+	return books, nil
 }
