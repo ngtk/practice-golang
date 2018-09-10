@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis"
+	"log"
 )
 
 var (
@@ -13,10 +14,23 @@ var (
 func main() {
 	createRedisClient()
 	book := Book{12, "Land of Lisp"}
-	fmt.Println(setBook(book))
-	fmt.Println(getBook(12))
-	fmt.Println(delBook(12))
-	fmt.Println(getBook(12))
+	err := setBook(book)
+	if err != nil {
+		log.Fatal("Book set error.")
+	}
+	fmt.Println("Book set success.")
+
+	book2, err := getBook(12)
+	if err != nil {
+		log.Fatal("Book get error.")
+	}
+	fmt.Println("Book get success.")
+
+	err = delBook(book2.Id)
+	if err != nil {
+		log.Fatal("Book del error.")
+	}
+	fmt.Println("Book del success.")
 }
 
 // Struct
@@ -50,7 +64,6 @@ func setBook(book Book) error {
 	if err != nil {
 		return err
 	}
-	fmt.Print("Book Saved.")
 	return nil
 }
 
@@ -71,6 +84,5 @@ func delBook(id int64) error {
 	if err != nil {
 		return err
 	}
-	fmt.Print("Book Deleted.")
 	return nil
 }
