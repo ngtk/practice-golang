@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"log"
+	"time"
 )
 
 var (
@@ -13,7 +14,7 @@ var (
 
 func main() {
 	createRedisClient()
-	book := Book{12, "Land of Lisp"}
+	book := Book{12, "Land of Lisp", time.Now()}
 	err := setBook(book)
 	if err != nil {
 		log.Fatal("Book set error.")
@@ -32,17 +33,19 @@ func main() {
 	}
 	fmt.Println("Book del success.")
 
-	_ = setBook(Book{13, "Land of Lisp"})
-	_ = setBook(Book{14, "Land of Lisp"})
-	_ = setBook(Book{15, "Land of Lisp"})
+	_ = setBook(Book{13, "Land of Lisp", time.Now()})
+	_ = setBook(Book{14, "Land of Lisp", time.Now()})
+	_ = setBook(Book{15, "Land of Lisp", time.Now()})
 
 	fmt.Println(getBooks([]int64{13, 14, 16}))
+	zaddBook(book)
 }
 
 // Struct
 type Book struct {
-	Id    int64
-	Title string
+	Id        int64
+	Title     string
+	UpdatedAt time.Time
 }
 
 // Operations
@@ -113,9 +116,25 @@ func getBooks(ids []int64) ([]Book, error) {
 				return []Book{}, err
 			}
 		} else {
-			book = Book{-1, ""}
+			book = Book{-1, "", time.Now()}
 		}
 		books = append(books, book)
 	}
 	return books, nil
+}
+
+func bookSortedSetUpdatedAtKey() string {
+	return "book:sorted_set:updated_at"
+}
+
+func zaddBook(book Book) error {
+	b, err := json.Marshal(book)
+	if err != nil {
+		return err
+	}
+	err = redisClient.ZAdd(bookSortedSetUpdatedAtKey(), redis.Z{
+		Score:  float64(book.UpdatedAt.Unix()),
+		Member: b,
+	}).Err()
+	return err
 }
