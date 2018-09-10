@@ -42,7 +42,11 @@ func bookKey(bookId int64) string {
 }
 
 func setBook(book Book) error {
-	err := redisClient.Set(bookKey(book.Id), marshal(book), 0).Err()
+	b, err := json.Marshal(book)
+	if err != nil {
+		return err
+	}
+	err = redisClient.Set(bookKey(book.Id), b, 0).Err()
 	if err != nil {
 		return err
 	}
@@ -69,10 +73,4 @@ func delBook(id int64) error {
 	}
 	fmt.Print("Book Deleted.")
 	return nil
-}
-
-// Helpers
-func marshal(object interface{}) []byte {
-	b, _ := json.Marshal(object)
-	return b
 }
