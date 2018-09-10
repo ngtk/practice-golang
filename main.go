@@ -31,6 +31,12 @@ func main() {
 		log.Fatal("Book del error.")
 	}
 	fmt.Println("Book del success.")
+
+	_ = setBook(Book{13, "Land of Lisp"})
+	_ = setBook(Book{14, "Land of Lisp"})
+	_ = setBook(Book{15, "Land of Lisp"})
+
+	fmt.Println(getBooks([]int64{13, 14, 16}))
 }
 
 // Struct
@@ -85,4 +91,31 @@ func delBook(id int64) error {
 		return err
 	}
 	return nil
+}
+
+func getBooks(ids []int64) ([]Book, error) {
+	keys := []string{}
+	for _, id := range ids {
+		keys = append(keys, bookKey(id))
+	}
+
+	rows, err := redisClient.MGet(keys...).Result()
+	if err != nil {
+		return []Book{}, err
+	}
+
+	var books []Book
+	for _, row := range rows {
+		var book Book
+		b, ok := row.(string)
+		if ok {
+			if err = json.Unmarshal([]byte(b), &book); err != nil {
+				return []Book{}, err
+			}
+		} else {
+			book = Book{-1, ""}
+		}
+		books = append(books, book)
+	}
+	return books, nil
 }
